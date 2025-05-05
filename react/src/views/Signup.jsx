@@ -1,12 +1,38 @@
 import { Link } from "react-router-dom";
+import { createRef, useState } from "react";
+import axiosClient from "../axios-client.js";
+import { useStateContext } from "../context/ContextProvider.jsx";
 
 export default function Signup() {
-    const onSubmit = (ev) => {
+    const nameRef = createRef();
+    const emailRef = createRef();
+    const passwordRef = createRef();
+    const passwordConfirmationRef = createRef();
+    const { setUser, setToken } = useStateContext();
+    const [errors, setErrors] = useState(null);
+
+    const onSubmit = ev => {
         ev.preventDefault();
-        const formData = new FormData(ev.target);
-        const data = Object.fromEntries(formData.entries());
-        console.log(data);
-    }
+
+        const payload = {
+            name: nameRef.current.value,
+            email: emailRef.current.value,
+            password: passwordRef.current.value,
+            password_confirmation: passwordConfirmationRef.current.value,
+        };
+
+        axiosClient.post('/signup', payload)
+            .then(({ data }) => {
+                setUser(data.user);
+                setToken(data.token);
+            })
+            .catch(err => {
+                const response = err.response;
+                if (response && response.status === 422) {
+                    setErrors(response.data.errors);
+                }
+            });
+    };
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -15,39 +41,46 @@ export default function Signup() {
                     <h2 className="text-3xl font-bold text-gray-800">Create an account</h2>
                 </div>
                 <form className="mt-8 space-y-6" onSubmit={onSubmit}>
+                    {errors && (
+                        <div className="alert mb-4">
+                            {Object.keys(errors).map(key => (
+                                <p key={key} className="text-red-500">{errors[key][0]}</p>
+                            ))}
+                        </div>
+                    )}
                     <div className="space-y-4">
                         <div>
                             <input
+                                ref={nameRef}
                                 type="text"
                                 placeholder="Full Name"
-                                name="name"
                                 required
                                 className="appearance-none relative block w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                         </div>
                         <div>
                             <input
+                                ref={emailRef}
                                 type="email"
                                 placeholder="Email"
-                                name="email"
                                 required
                                 className="appearance-none relative block w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                         </div>
                         <div>
                             <input
+                                ref={passwordRef}
                                 type="password"
                                 placeholder="Password"
-                                name="password"
                                 required
                                 className="appearance-none relative block w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                         </div>
                         <div>
                             <input
+                                ref={passwordConfirmationRef}
                                 type="password"
                                 placeholder="Confirm Password"
-                                name="password_confirmation"
                                 required
                                 className="appearance-none relative block w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />

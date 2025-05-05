@@ -1,56 +1,53 @@
-import { Link } from "react-router-dom";
+import {Link} from "react-router-dom";
+import axiosClient from "../axios-client.js";
+import {createRef} from "react";
+import {useStateContext} from "../context/ContextProvider.jsx";
+import { useState } from "react";
 
 export default function Login() {
+  const emailRef = createRef()
+  const passwordRef = createRef()
+  const { setUser, setToken } = useStateContext()
+  const [message, setMessage] = useState(null)
 
-    const onSubmit = (ev) => {
-        ev.preventDefault();
-        const formData = new FormData(ev.target);
-        const data = Object.fromEntries(formData.entries());
-        console.log(data);
+  const onSubmit = ev => {
+    ev.preventDefault()
+
+    const payload = {
+      email: emailRef.current.value,
+      password: passwordRef.current.value,
     }
+    axiosClient.post('/login', payload)
+      .then(({data}) => {
+        setUser(data.user)
+        setToken(data.token);
+      })
+      .catch((err) => {
+        const response = err.response;
+        if (response && response.status === 422) {
+          setMessage(response.data.message)
+        }
+      })
+  }
 
-    return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
-                <div className="text-center">
-                    <h2 className="text-3xl font-bold text-gray-800">Sign in to your account</h2>
-                </div>
-                <form className="mt-8 space-y-6" onSubmit={onSubmit}>
-                    <div className="space-y-4">
-                        <div>
-                            <input
-                                type="email"
-                                placeholder="Email"
-                                name="email"
-                                required
-                                className="appearance-none relative block w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            />
-                        </div>
-                        <div>
-                            <input
-                                type="password"
-                                placeholder="Password"
-                                name="password"
-                                required
-                                className="appearance-none relative block w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            />
-                        </div>
-                    </div>
+  return (
+    <div className="login-signup-form animated fadeInDown">
+      <div className="form">
+        <form onSubmit={onSubmit}>
+          <h1 className="title">Login into your account</h1>
 
-                    <div>
-                        <button
-                            type="submit"
-                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                            Login
-                        </button>
-                    </div>
-
-                    <p className="text-center text-sm text-gray-600">
-                        Not registered? <Link to="/signup" className="font-medium text-blue-600 hover:text-blue-500">Create an Account</Link>
-                    </p>
-                </form>
+          {message &&
+            <div className="alert">
+              <p>{message}</p>
             </div>
-        </div>
-    );
+          }
+
+          <input ref={emailRef} type="email" placeholder="Email"/>
+          <input ref={passwordRef} type="password" placeholder="Password"/>
+          <button className="btn btn-block">Login</button>
+          <p className="message">Not registered? <Link to="/signup">Create an account</Link></p>
+        </form>
+      </div>
+    </div>
+  )
 }
