@@ -1,33 +1,58 @@
-import { Outlet, Navigate, Link } from "react-router-dom";
-import { useStateContext } from "../contexts/ContextProvider";
+import {Link, Navigate, Outlet} from "react-router-dom";
+import {useStateContext} from "../context/ContextProvider";
+import axiosClient from "../axios-client.js";
+import {useEffect} from "react";
 
-export default function GuestLayout() {
-    const { user, token } = useStateContext();
+export default function DefaultLayout() {
+  const {user, token, setUser, setToken, notification} = useStateContext();
 
-    if (!token) {
-        return <Navigate to="/login" />
-    }
+  if (!token) {
+    return <Navigate to="/login"/>
+  }
 
-    return (
-        <div id="defaultLayout" className="flex h-screen bg-gray-50">
-            <aside className="w-64 bg-slate-800 text-white p-4">
-                <Link to="/dashboard" className="block py-2 px-4 hover:bg-slate-700 rounded mb-1">Dashboard</Link>
-                <Link to="/users" className="block py-2 px-4 hover:bg-slate-700 rounded mb-1">Users</Link>
-                <Link to="/dashboard" className="block py-2 px-4 hover:bg-slate-700 rounded"></Link>
-            </aside>
-            <div className="content flex-1 flex flex-col">
-                <header className="bg-white shadow-sm px-6 py-4 flex justify-between items-center">
-                    <div>
-                        Header
-                    </div>
-                    <div>
-                        User info
-                    </div>
-                </header>
-                <main className="flex-1 p-6 overflow-auto">
-                    <Outlet />
-                </main>
-            </div>
-        </div>
-    )
+  const onLogout = ev => {
+    ev.preventDefault()
+
+    axiosClient.post('/logout')
+      .then(() => {
+        setUser({})
+        setToken(null)
+      })
+  }
+
+  useEffect(() => {
+    axiosClient.get('/user')
+      .then(({data}) => {
+         setUser(data)
+      })
+  }, [])
+
+  return (
+    <div id="defaultLayout">
+      <aside>
+        <Link to="/dashboard">Dashboard</Link>
+        <Link to="/users">Users</Link>
+      </aside>
+      <div className="content">
+        <header>
+          <div>
+            Header
+          </div>
+
+          <div>
+            {user.name} &nbsp; &nbsp;
+            <a onClick={onLogout} className="btn-logout" href="#">Logout</a>
+          </div>
+        </header>
+        <main>
+          <Outlet/>
+        </main>
+        {notification &&
+          <div className="notification">
+            {notification}
+          </div>
+        }
+      </div>
+    </div>
+  )
 }
